@@ -3,11 +3,11 @@ package com.example.travellatra.player
 import android.content.Context
 import android.util.Log
 import androidx.compose.runtime.getValue
-import androidx.media3.common.MediaItem
-import androidx.media3.exoplayer.ExoPlayer
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
+import androidx.media3.exoplayer.ExoPlayer
 
 class PlayerManager(
     private val context: Context
@@ -15,11 +15,17 @@ class PlayerManager(
 
     var isLoading by mutableStateOf(false)
         private set
-    private var isMuted = true
+
+    var isMuted by mutableStateOf(true)
+        private set
+
+    var isPlaying by mutableStateOf(true)
+        private set
 
     private var currentVideoUrl: String? = null
 
     private var _exoPlayer: ExoPlayer? = null
+
     val exoPlayer: ExoPlayer
         get() {
             if (_exoPlayer == null) {
@@ -27,8 +33,14 @@ class PlayerManager(
                     volume = 0f
                     addListener(object : Player.Listener {
                         override fun onPlaybackStateChanged(playbackState: Int) {
-                            this@PlayerManager.isLoading = playbackState == Player.STATE_BUFFERING
+                            this@PlayerManager.isLoading =
+                                playbackState == Player.STATE_BUFFERING
                             Log.d("PlayerManager", "Playback state: $playbackState")
+                        }
+
+                        override fun onIsPlayingChanged(isPlaying: Boolean) {
+                            this@PlayerManager.isPlaying = isPlaying
+                            Log.d("PlayerManager", "Is playing: $isPlaying")
                         }
                     })
                 }
@@ -53,17 +65,21 @@ class PlayerManager(
 
     fun pauseVideo() {
         Log.d("PlayerManager", "Pause video")
-        _exoPlayer?.pause()
+        exoPlayer.pause()
+    }
+
+    fun togglePlayPause() {
+        if (exoPlayer.isPlaying) {
+            pauseVideo()
+        } else {
+            exoPlayer.play()
+        }
     }
 
     fun toggleMute() {
         isMuted = !isMuted
-        _exoPlayer?.volume = if (isMuted) 0f else 1f
+        exoPlayer.volume = if (isMuted) 0f else 1f
         Log.d("PlayerManager", "Muted: $isMuted")
-    }
-
-    fun isMuted(): Boolean {
-        return isMuted
     }
 
     fun releasePlayer() {

@@ -7,21 +7,26 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.VolumeOff
+import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.travellatra.data.model.VideoFile
 import com.example.travellatra.data.model.VideoItem
@@ -34,6 +39,7 @@ fun FeedScreen(
 ) {
 
     val context = LocalContext.current
+
     val playerManager = remember {
         PlayerManager(context)
     }
@@ -57,8 +63,11 @@ fun FeedContent(
     uiState: FeedUiState,
     playerManager: PlayerManager
 ) {
+
     when {
+
         uiState.isLoading -> {
+
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
@@ -68,6 +77,7 @@ fun FeedContent(
         }
 
         uiState.error != null -> {
+
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
@@ -77,6 +87,7 @@ fun FeedContent(
         }
 
         else -> {
+
             val pagerState = rememberPagerState(
                 pageCount = {
                     uiState.videos.size
@@ -87,17 +98,27 @@ fun FeedContent(
                 state = pagerState,
                 modifier = Modifier.fillMaxSize()
             ) { page ->
+
                 val video = uiState.videos[page]
+
                 val videoUrl = video.video_files.firstOrNull()?.link.orEmpty()
+
                 Box(
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier
+                        .fillMaxSize()
+                        // Toggle play pause on video tap
+                        .clickable {
+                            playerManager.togglePlayPause()
+                        }
                 ) {
+
                     if (
                         pagerState.currentPage == page &&
                         pagerState.currentPageOffsetFraction == 0f
                     ) {
 
                         if (!LocalInspectionMode.current) {
+
                             VideoPlayer(
                                 modifier = Modifier.fillMaxSize(),
                                 playerManager = playerManager,
@@ -105,18 +126,35 @@ fun FeedContent(
                             )
 
                         } else {
+
+                            // Preview placeholder
                             Box(
                                 modifier = Modifier
                                     .fillMaxSize()
                                     .background(Color.DarkGray),
                                 contentAlignment = Alignment.Center
                             ) {
+
                                 Text(
                                     text = "Video Preview",
                                     color = Color.White
                                 )
                             }
                         }
+                    }
+
+                    // Show play icon when paused
+                    if (!playerManager.isPlaying) {
+
+                        Icon(
+                            imageVector = Icons.Default.PlayArrow,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier
+                                .align(Alignment.Center)
+                                .background(Color.Black.copy(alpha = 0.5f))
+                                .padding(20.dp)
+                        )
                     }
 
                     Text(
@@ -130,9 +168,15 @@ fun FeedContent(
                             .padding(8.dp)
                     )
 
-                    Text(
-                        text = if (playerManager.isMuted()) "Unmute" else "Mute",
-                        color = Color.White,
+                    // Mute/unmute icon
+                    Icon(
+                        imageVector = if (playerManager.isMuted) {
+                            Icons.Default.VolumeOff
+                        } else {
+                            Icons.Default.VolumeUp
+                        },
+                        contentDescription = null,
+                        tint = Color.White,
                         modifier = Modifier
                             .align(Alignment.TopEnd)
                             .padding(16.dp)
@@ -140,13 +184,14 @@ fun FeedContent(
                             .clickable {
                                 playerManager.toggleMute()
                             }
-                            .padding(8.dp)
+                            .padding(12.dp)
                     )
                 }
             }
         }
     }
 }
+
 @Preview(showBackground = true)
 @Composable
 fun FeedContentPreview() {

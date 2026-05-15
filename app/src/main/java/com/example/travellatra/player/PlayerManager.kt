@@ -10,7 +10,7 @@ import androidx.compose.runtime.setValue
 import androidx.media3.common.Player
 
 class PlayerManager(
-    context: Context
+    private val context: Context
 ) {
 
     var isLoading by mutableStateOf(false)
@@ -19,15 +19,22 @@ class PlayerManager(
 
     private var currentVideoUrl: String? = null
 
-    val exoPlayer: ExoPlayer = ExoPlayer.Builder(context).build().apply {
-        volume = 0f
-        addListener(object : Player.Listener {
-            override fun onPlaybackStateChanged(playbackState: Int) {
-                this@PlayerManager.isLoading = playbackState == Player.STATE_BUFFERING
-                Log.d("PlayerManager", "Playback state: $playbackState")
+    private var _exoPlayer: ExoPlayer? = null
+    val exoPlayer: ExoPlayer
+        get() {
+            if (_exoPlayer == null) {
+                _exoPlayer = ExoPlayer.Builder(context).build().apply {
+                    volume = 0f
+                    addListener(object : Player.Listener {
+                        override fun onPlaybackStateChanged(playbackState: Int) {
+                            this@PlayerManager.isLoading = playbackState == Player.STATE_BUFFERING
+                            Log.d("PlayerManager", "Playback state: $playbackState")
+                        }
+                    })
+                }
             }
-        })
-    }
+            return _exoPlayer!!
+        }
 
     fun playVideo(videoUrl: String) {
         if (currentVideoUrl == videoUrl) {
@@ -46,12 +53,12 @@ class PlayerManager(
 
     fun pauseVideo() {
         Log.d("PlayerManager", "Pause video")
-        exoPlayer.pause()
+        _exoPlayer?.pause()
     }
 
     fun toggleMute() {
         isMuted = !isMuted
-        exoPlayer.volume = if (isMuted) 0f else 1f
+        _exoPlayer?.volume = if (isMuted) 0f else 1f
         Log.d("PlayerManager", "Muted: $isMuted")
     }
 
@@ -61,6 +68,7 @@ class PlayerManager(
 
     fun releasePlayer() {
         Log.d("PlayerManager", "Release player")
-        exoPlayer.release()
+        _exoPlayer?.release()
+        _exoPlayer = null
     }
 }

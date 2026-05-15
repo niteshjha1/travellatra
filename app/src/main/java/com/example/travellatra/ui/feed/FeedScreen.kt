@@ -20,7 +20,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalInspectionMode
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.travellatra.data.model.VideoFile
+import com.example.travellatra.data.model.VideoItem
 import com.example.travellatra.player.PlayerManager
 import com.example.travellatra.player.VideoPlayer
 
@@ -42,10 +46,22 @@ fun FeedScreen(
         }
     }
 
+    FeedContent(
+        uiState = uiState,
+        playerManager = playerManager
+    )
+}
+
+@Composable
+fun FeedContent(
+    uiState: FeedUiState,
+    playerManager: PlayerManager
+) {
     when {
         uiState.isLoading -> {
             Box(
-                modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
             ) {
                 CircularProgressIndicator()
             }
@@ -53,7 +69,8 @@ fun FeedScreen(
 
         uiState.error != null -> {
             Box(
-                modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
             ) {
                 Text(text = uiState.error ?: "Unknown error")
             }
@@ -63,23 +80,43 @@ fun FeedScreen(
             val pagerState = rememberPagerState(
                 pageCount = {
                     uiState.videos.size
-                })
+                }
+            )
 
             VerticalPager(
-                state = pagerState, modifier = Modifier.fillMaxSize()
+                state = pagerState,
+                modifier = Modifier.fillMaxSize()
             ) { page ->
                 val video = uiState.videos[page]
                 val videoUrl = video.video_files.firstOrNull()?.link.orEmpty()
-
                 Box(
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    if (pagerState.currentPage == page && pagerState.currentPageOffsetFraction == 0f) {
-                        VideoPlayer(
-                            modifier = Modifier.fillMaxSize(),
-                            playerManager = playerManager,
-                            videoUrl = videoUrl
-                        )
+                    if (
+                        pagerState.currentPage == page &&
+                        pagerState.currentPageOffsetFraction == 0f
+                    ) {
+
+                        if (!LocalInspectionMode.current) {
+                            VideoPlayer(
+                                modifier = Modifier.fillMaxSize(),
+                                playerManager = playerManager,
+                                videoUrl = videoUrl
+                            )
+
+                        } else {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(Color.DarkGray),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = "Video Preview",
+                                    color = Color.White
+                                )
+                            }
+                        }
                     }
 
                     Text(
@@ -103,9 +140,42 @@ fun FeedScreen(
                             .clickable {
                                 playerManager.toggleMute()
                             }
-                            .padding(8.dp))
+                            .padding(8.dp)
+                    )
                 }
             }
         }
     }
+}
+@Preview(showBackground = true)
+@Composable
+fun FeedContentPreview() {
+
+    val fakeVideos = listOf(
+        VideoItem(
+            id = 1,
+            image = "",
+            video_files = listOf(
+                VideoFile(
+                    link = ""
+                )
+            )
+        ),
+        VideoItem(
+            id = 2,
+            image = "",
+            video_files = listOf(
+                VideoFile(
+                    link = ""
+                )
+            )
+        )
+    )
+
+    FeedContent(
+        uiState = FeedUiState(
+            videos = fakeVideos
+        ),
+        playerManager = PlayerManager(LocalContext.current)
+    )
 }

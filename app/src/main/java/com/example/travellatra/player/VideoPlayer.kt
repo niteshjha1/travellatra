@@ -7,44 +7,50 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.ui.PlayerView
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.ui.Alignment
 
 @Composable
 fun VideoPlayer(
     modifier: Modifier = Modifier,
     playerManager: PlayerManager,
-    videoUrl: String,
-    isVisible: Boolean
+    videoUrl: String
 ) {
 
-    LaunchedEffect(isVisible) {
+    val isLoading = playerManager.isLoading
 
-        if (isVisible) {
-            playerManager.playVideo(videoUrl)
-        } else {
-            playerManager.pauseVideo()
-        }
+    LaunchedEffect(videoUrl) {
+        playerManager.playVideo(videoUrl)
     }
 
-    AndroidView(
-        modifier = modifier,
-        factory = { context ->
+    Box(
+        modifier = modifier
+    ) {
 
-            PlayerView(context).apply {
+        AndroidView(
+            modifier = Modifier.fillMaxSize(),
+            factory = { context ->
 
-                player = playerManager.exoPlayer
-                useController = false
+                PlayerView(context).apply {
 
-                layoutParams = ViewGroup.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.MATCH_PARENT
-                )
+                    player = playerManager.exoPlayer
+                    useController = false
+
+                    layoutParams = ViewGroup.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.MATCH_PARENT
+                    )
+                }
             }
-        }
-    )
+        )
 
-    DisposableEffect(Unit) {
-        onDispose {
-            playerManager.pauseVideo()
+        if (isLoading) {
+
+            CircularProgressIndicator(
+                modifier = Modifier.align(Alignment.Center)
+            )
         }
     }
 }

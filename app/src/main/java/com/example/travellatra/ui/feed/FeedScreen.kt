@@ -1,6 +1,7 @@
 package com.example.travellatra.ui.feed
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -29,7 +30,6 @@ fun FeedScreen(
 ) {
 
     val context = LocalContext.current
-
     val playerManager = remember {
         PlayerManager(context)
     }
@@ -43,54 +43,44 @@ fun FeedScreen(
     }
 
     when {
-
         uiState.isLoading -> {
-
             Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
+                modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center
             ) {
                 CircularProgressIndicator()
             }
         }
 
         uiState.error != null -> {
-
             Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
+                modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center
             ) {
                 Text(text = uiState.error ?: "Unknown error")
             }
         }
 
         else -> {
-
             val pagerState = rememberPagerState(
                 pageCount = {
                     uiState.videos.size
-                }
-            )
+                })
 
             VerticalPager(
-                state = pagerState,
-                modifier = Modifier.fillMaxSize()
+                state = pagerState, modifier = Modifier.fillMaxSize()
             ) { page ->
-
                 val video = uiState.videos[page]
-
                 val videoUrl = video.video_files.firstOrNull()?.link.orEmpty()
 
                 Box(
                     modifier = Modifier.fillMaxSize()
                 ) {
-
-                    VideoPlayer(
-                        modifier = Modifier.fillMaxSize(),
-                        playerManager = playerManager,
-                        videoUrl = videoUrl,
-                        isVisible = pagerState.currentPage == page
-                    )
+                    if (pagerState.currentPage == page && pagerState.currentPageOffsetFraction == 0f) {
+                        VideoPlayer(
+                            modifier = Modifier.fillMaxSize(),
+                            playerManager = playerManager,
+                            videoUrl = videoUrl
+                        )
+                    }
 
                     Text(
                         text = "Video ${video.id}",
@@ -102,6 +92,18 @@ fun FeedScreen(
                             .background(Color.Black.copy(alpha = 0.5f))
                             .padding(8.dp)
                     )
+
+                    Text(
+                        text = if (playerManager.isMuted()) "Unmute" else "Mute",
+                        color = Color.White,
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(16.dp)
+                            .background(Color.Black.copy(alpha = 0.5f))
+                            .clickable {
+                                playerManager.toggleMute()
+                            }
+                            .padding(8.dp))
                 }
             }
         }
